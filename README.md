@@ -120,15 +120,24 @@ Worth knowing before attributing a measured nonlinearity to magnet alignment.
 
 ## Running
 
-```bash
-VENV=/Users/aliu3203/dev/researchMusumeci/pmq_measurements/.venv/bin/python
+This project owns its environment in `.venv/` (Python 3.14, numpy 2.5.1,
+scipy 1.18.0, matplotlib 3.11.1):
 
-$VENV checks.py                 # 8/8 checks pass, with numbers printed
-$VENV example_offset_scan.py    # writes offset_scan.png
+```bash
+cd pmq_sim
+.venv/bin/python checks.py                 # 8/8 checks pass, with numbers printed
+.venv/bin/python example_offset_scan.py    # writes offset_scan.png
 ```
 
-That venv has numpy 2.4.5, scipy 1.17.1, matplotlib and pandas. (The repo-root
-`.venv` has only pip/setuptools and is unusable.)
+To rebuild it from scratch:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+```
+
+(The repo-root `.venv` has only pip/setuptools and is unusable; `pmq_measurements`
+has its own separate environment.)
 
 `checks.py` prints numbers rather than passing silently, because the point is to see
 *how well* each identity holds. Checks 2 and 4 are the substantive ones: check 2
