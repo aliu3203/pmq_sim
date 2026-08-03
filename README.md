@@ -1,0 +1,155 @@
+# pmq_sim — magnetics layer
+
+A from-scratch, Maxwell-consistent soft-edge quadrupole field model, built to answer
+one question quantitatively: **how does PMQ transverse position affect the kick
+generated on a wire threading the bore?**
+
+This is the first layer only. No wire dynamics, no detector model — see
+[Not modelled here](#not-modelled-here).
+
+## The model
+
+The field is derived from a scalar potential rather than written down component by
+component, so Maxwell consistency is structural rather than something checked after
+the fact. In the current-free bore **B** = ∇ψ with ∇²ψ = 0, and for a normal
+quadrupole with longitudinal gradient profile `G(z)`:
+
+$$\psi(x,y,z) = G(z)\,xy \;-\; \frac{G''(z)}{12}\,xy\,(x^2+y^2)$$
+
+The second term is fixed by requiring ∇²ψ = 0: the first term contributes
+`G''(z)·xy` through `∂²/∂z²`, and `∇²⊥[xy(x²+y²)] = 12xy`, so the coefficient must
+be `−1/12`. Taking the gradient:
+
+```
+Bx = G(z)·y   − (G''(z)/12)·(3x²y + y³)
+By = G(z)·x   − (G''(z)/12)·(x³ + 3xy²)
+Bz = G'(z)·xy − (G'''(z)/12)·(x³y + xy³)
+```
+
+### Truncation order
+
+Two properties matter, and `checks.py` asserts both:
+
+- **∇×B ≡ 0 identically**, because **B** is a gradient. A numerical curl test
+  therefore verifies only that the three coded expressions really are consistent
+  partial derivatives of one potential — which is exactly the typo it needs to catch.
+
+- **∇·B is *not* exactly zero.** The `G''` term cancels the `G''·xy` from `∂²ψ/∂z²`,
+  but the second z-derivative of the `G''` term itself survives:
+
+  ```
+  ∇·B = −(G''''(z)/12)·xy·(x² + y²)
+  ```
+
+  The field is exact to O(r³) and the residual grows as r⁴. Asserting `∇·B == 0`
+  would be wrong; asserting the r⁴ scaling is the real test. At r = 3 mm with the
+  example parameters the residual is ~1e-6 of `G0` — far below any physical effect.
+
+Carrying more terms means continuing the same recursion: each new term cancels the
+`∂²/∂z²` of the previous one.
+
+### Gradient profiles
+
+`G(z) = G0·f(s)` with `s = (z − z0)/L`, so `dⁿG/dzⁿ = (G0/Lⁿ)·f⁽ⁿ⁾(s)`. Every
+profile supplies `f` through `f'''` in closed form — needed because `Bx`, `By` use
+`G''` and `Bz` uses `G'''`.
+
+| name | `f(s)` | notes |
+|---|---|---|
+| `hard` | `1` for `|s| < 1/2`, else `0` | leading order only; matches `quadrupole/tracking2.m` |
+| `tanh` | `[tanh((s+½)/d) − tanh((s−½)/d)] / 2` | smoothed flat top, fringe scale `d` |
+| `gauss` | `exp(−s²/2d²)` | for short magnets with no real flat top |
+| `enge` | product of two logistic edges | standard accelerator fringe model |
+
+`hard` **raises** on any derivative request rather than returning zero. A zero `G''`
+looks exactly like a valid soft-edge model with no fringe curvature and would
+silently hide the fact that only the leading-order field is available.
+
+The `tanh` profile has a property worth knowing: its integral is *exactly* `L` for
+any `d`, because the integral of a difference of two shifted `tanh` steps is
+(shift) × (total jump). The fringe removes precisely as much area as it adds. What
+converges as `d → 0` is the pointwise field on the flat top, not the integral.
+
+## The result this layer exists to produce
+
+With the wire at `(x, y)` and the magnet center at `(dx, dy)`, writing `u = x − dx`
+and `v = y − dy`:
+
+$$\int B_y\,dz = \left(\int G\,dz\right)u \;-\; \frac{1}{12}\left(\int G''\,dz\right)(u^3 + 3uv^2)$$
+
+For any profile that decays at both ends, `∫G'' dz = [G']₋∞^∞ = 0`.
+
+> **The field integral is exactly linear in PMQ offset, for any fringe shape.**
+> The entire position-to-kick relationship collapses to one number, the integrated
+> gradient `∫G dz = G0·L_eff`.
+
+`checks.py` confirms this numerically at the 1e-16 level for `tanh`, `gauss`, and
+`enge` alike.
+
+The result survives more than it looks like it should. A triplet with *overlapping*
+fringes (L = 6 mm, 13.5 mm spacing) is still exactly linear, with slope equal to the
+summed integrated gradients — because superposition holds and each magnet
+contributes linearly, so no amount of overlap can produce curvature. The same is
+true if the magnets have different individual offsets, or if the wire is tilted or
+sagging: `By = G(z)·x` is linear in `x`, so integrating along any path leaves the
+dependence on a rigid displacement linear.
+
+That makes the statement of what this layer **cannot** explain quite sharp. Fringe
+shape changes the shape of `B(z)` — hence the time-domain trace and its sensitivity
+to pulse width — but not the integrated kick. Curvature in a measured
+kick-versus-position scan has only three places left to come from:
+
+- **higher multipoles** from Halbach segmentation — not in this model, which is a
+  pure quadrupole, and the leading candidate
+- **a truncated integration range**, which makes `∫G'' dz ≠ 0` and revives the cubic
+  term (this is why `field_integral` defaults to ±10 magnet lengths of fringe)
+- **the wire dynamics or detector response** — finite pulse width, dispersion, the
+  photodiode's linear range
+
+Worth knowing before attributing a measured nonlinearity to magnet alignment.
+
+## Files
+
+| file | contents |
+|---|---|
+| `profiles.py` | `G(z)` shape functions and their first three derivatives |
+| `field.py` | `PMQ` (offset, roll, order-0 or order-2 field) and `Lattice` (superposition) |
+| `integrals.py` | field integrals, effective length, `offset_scan`, `kick`, `offset_sensitivity` |
+| `checks.py` | eight analytic self-checks — run this first |
+| `example_offset_scan.py` | the ±0.8 mm bench sweep, with figure |
+
+## Running
+
+```bash
+VENV=/Users/aliu3203/dev/researchMusumeci/pmq_measurements/.venv/bin/python
+
+$VENV checks.py                 # 8/8 checks pass, with numbers printed
+$VENV example_offset_scan.py    # writes offset_scan.png
+```
+
+That venv has numpy 2.4.5, scipy 1.17.1, matplotlib and pandas. (The repo-root
+`.venv` has only pip/setuptools and is unusable.)
+
+`checks.py` prints numbers rather than passing silently, because the point is to see
+*how well* each identity holds. Checks 2 and 4 are the substantive ones: check 2
+proves the Maxwell expansion is correct to the claimed order, and check 4 proves the
+offset-to-kick relationship is the single number to extract from bench data.
+
+## Magnet parameters
+
+`G0`, `L`, and the bore radius in `example_offset_scan.py` and `checks.py` are
+**placeholders** marked with `TODO`. Substitute the real numbers for the magnet on
+the bench and everything scales. The physics and all eight checks are
+parameter-independent.
+
+## Not modelled here
+
+Deferred to later layers, listed so the interfaces leave room:
+
+- the current pulse and the Lorentz impulse density on the wire
+- the dispersive damped wire equation — `c₀ ≈ 222 m/s` and the `EIwT` dispersion
+  machinery already exist in `pmq/PMQ_measurements/pmq_analysis.py:147`
+- photodiode response, the 127 µm wire diameter, diode angle (`6-11-26-diodeangle`)
+- wire sag and the deliberate slope sweeps (`6-8-26-slopes`)
+- higher multipoles from Halbach segmentation
+- comparison against measured CSVs or the Radia exports in `pmq/pmq_radia/`
