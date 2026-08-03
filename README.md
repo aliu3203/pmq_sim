@@ -236,6 +236,19 @@ offset-to-kick relationship is the single number to extract from bench data.
 the bench and everything scales. The physics and all eight checks are
 parameter-independent.
 
+## Simple Example
+
+To define PMQs and create a lattice structure, use the following import statement
+```python3
+from field import PMQ, Lattice
+```
+
+A simple focusing, defocusing doublet PMQ is defined as:
+```python3
+lattice = Lattice([PMQ(G0=+500, L=0.003, z0=0.0, profile='hard'), PMQ(-500, 0.003, z0=0.0, profile='hard')])
+```
+Implemented profiles are described under `profiles.py`. Methods for lattices include computing the magnetic field at a specific point.
+
 ## Not modelled here
 
 Deferred to later layers, listed so the interfaces leave room:
