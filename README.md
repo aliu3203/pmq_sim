@@ -7,6 +7,91 @@ generated on a wire threading the bore?**
 This is the first layer only. No wire dynamics, no detector model — see
 [Not modelled here](#not-modelled-here).
 
+## Coordinate system
+
+Right-handed Cartesian `(x, y, z)`, with **z along the wire** — the propagation
+direction, and the beam direction in the eventual application. `x` is horizontal,
+`y` vertical. All lengths in metres, fields in tesla, gradients in T/m; the plotting
+scripts convert to mm and mT at the last moment.
+
+```
+        y
+        |          . z  (wire / beam direction, into the magnet)
+        |        .
+        |      .
+        |    .
+        |  .
+        +--------------- x
+```
+
+There are **two transverse frames**, and keeping them apart is what the `dx`/`dy`
+parameters are for:
+
+| frame | coords | meaning |
+|---|---|---|
+| **lab / reference axis** | `x, y` | fixed by the wire. `(0, 0)` is where the wire runs. |
+| **magnet** | `u = x − dx`, `v = y − dy`, then rolled by `θ` | centred on the magnet's magnetic center |
+
+`dx, dy` are the **magnetic center's position in lab coordinates** — i.e. how far the
+magnet has been moved off the wire, which is exactly the bench knob being scanned.
+The field formulas are evaluated in the magnet frame and the resulting vector is
+rotated back to the lab frame.
+
+This is why the sign works out the way it does. With the wire at `(0, 0)` and the
+magnet displaced to `+dx`, the wire sits at `u = −dx` in the magnet frame, so
+
+```
+∫By dz = (∫G dz)·u = −(∫G dz)·dx
+```
+
+and `offset_sensitivity` returns **−∫G dz**, not `+∫G dz`. Moving the magnet right is
+equivalent to moving the wire left.
+
+`z0` is the magnet center along z; `z` is measured in the same lab frame as `z0`, so
+a lattice just places magnets at different `z0`.
+
+### Roll
+
+`theta` is a right-handed rotation about **+z**. Internally the probe point is
+rotated *into* the magnet frame by `−θ` and the resulting field vector rotated back
+by `+θ`. At leading order this reproduces the closed form in
+`quadrupole/tracking2.m:237` exactly (check 8):
+
+```
+Bx = G·(v·cos2θ − u·sin2θ)
+By = G·(u·cos2θ + v·sin2θ)
+```
+
+Deriving it as a coordinate rotation rather than hard-coding `cos2θ`/`sin2θ` means
+the `G''` terms rotate correctly too, which the `2θ` form does not generalise to.
+
+### Field and force signs
+
+`G0` is defined by **`By = G0·x`** on the midplane. From the Lorentz force with
+`v = (0, 0, vz)` and `B = (Bx, By, 0)`:
+
+```
+Fx = q(v×B)_x = −q·vz·By        dx' = −q·(∫By dz)/p
+Fy = q(v×B)_y = +q·vz·Bx        dy' = +q·(∫Bx dz)/p
+```
+
+Note the two planes carry **opposite signs**, and each is driven by the *other*
+field component. `integrals.kick` therefore takes both integrals at once so the
+pairing cannot be got wrong.
+
+Consequences worth stating outright, because they are easy to assume backwards:
+
+- **Positive `G0` focuses a *positively* charged particle in x.** For an electron
+  the sense reverses — positive `G0` is **defocusing in x**, focusing in y. (The
+  `% Quad 1 (Focusing in X)` comment beside `G1 = +500` in `quadrupole/tracking2.m`
+  has this backwards; tracking that field with the same file's own equations of
+  motion defocuses in x.)
+- `kick()` is a **thin-lens** result. At `G0 = 500 T/m`, `L = 20 mm` the tracked
+  deflection is ~3× larger, because the deflected particle drifts into the
+  defocusing field and is deflected further. It converges to the thin-lens value as
+  the gradient weakens (ratio 1.0014 at `G0 = 0.5 T/m`). The *field integral* is
+  exact regardless; only its interpretation as an angle is approximate.
+
 ## The model
 
 The field is derived from a scalar potential rather than written down component by

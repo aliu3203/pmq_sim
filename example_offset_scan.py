@@ -57,10 +57,13 @@ def main():
     print(f"  integrated gradient   int G dz = {gl:.4f} T")
     print(f"  offset sensitivity    d(int By dz)/d(offset) = {slope:.4f} T")
     print(f"    ... which is -(int G dz) to {abs(slope + gl) / abs(gl):.1e} relative")
+    iy_100um = slope * 100e-6
+    dxp, _ = kick(0.0, iy_100um, P_EV)
     print(
-        f"  a 100 um misalignment gives int By dz = {abs(slope) * 100e-6 * 1e3:.4f} mT*m"
-        f"  =  {abs(kick(slope * 100e-6, P_EV)) * 1e3:.4f} mrad at {P_EV / 1e6:.1f} MeV/c\n"
+        f"  a 100 um misalignment gives int By dz = {iy_100um * 1e3:+.4f} mT*m"
+        f"  =  {dxp * 1e3:+.4f} mrad at {P_EV / 1e6:.1f} MeV/c"
     )
+    print("    (thin-lens; a magnet this strong deflects ~3x more once tracked)\n")
 
     fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(11, 4.2))
 

@@ -41,9 +41,14 @@ class PMQ:
     Parameters
     ----------
     G0 : float
-        Peak field gradient [T/m].  Positive G0 focuses in x for a negatively
-        charged particle travelling in +z, matching the convention in
-        quadrupole/tracking2.m.
+        Peak field gradient [T/m], defined by By = G0 * x on the midplane.
+
+        Positive G0 focuses a *positively* charged particle travelling in +z in
+        the x plane, which is the usual accelerator convention.  For an
+        electron the sense reverses: positive G0 is defocusing in x and
+        focusing in y.  (The "Focusing in X" comment beside G1 = +500 in
+        quadrupole/tracking2.m has this backwards -- tracking that field with
+        its own equations of motion defocuses in x.)
     L : float
         Magnet length [m].  Sets the scale of the longitudinal profile; for
         soft-edge profiles the effective length differs slightly (see

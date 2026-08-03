@@ -126,20 +126,41 @@ def offset_scan(lattice, offsets, axis="x", x=0.0, y=0.0, n=4001, order=2):
     return ix, iy
 
 
-def kick(field_integral_tm, p_ev=None, charge=-1.0):
-    """Convert a field integral [T*m] to a deflection angle [rad].
+def kick(ix_tm, iy_tm, p_ev, charge=-1.0):
+    """Convert field integrals [T*m] to thin-lens deflection angles [rad].
 
-    dx' = q * (integral of B dz) / p
+    From the Lorentz force with v = (0, 0, vz) and B = (Bx, By, 0):
 
-    `p_ev` is the momentum in eV/c; for the 7.6 MeV beam in
-    quadrupole/tracking2.m that is about 8.1e6.  `charge` is in units of the
-    elementary charge.
+        Fx = q (v x B)_x = -q vz By    ->   dpx/dz = -q By
+        Fy = q (v x B)_y = +q vz Bx    ->   dpy/dz = +q Bx
+
+    so the two planes carry *opposite* signs and are driven by the *other*
+    component of the field:
+
+        dx' = -q (integral of By dz) / p
+        dy' = +q (integral of Bx dz) / p
+
+    Both integrals are taken so that the caller cannot accidentally pair a
+    component with the wrong plane -- the sign difference between them is easy
+    to get backwards.
+
+    `p_ev` is the momentum in eV/c (about 8.1e6 for the 7.6 MeV beam in
+    quadrupole/tracking2.m).  `charge` is in units of the elementary charge, so
+    the default -1 is an electron.
+
+    This is the thin-lens limit: it assumes the particle does not move
+    appreciably off-axis while inside the magnet.  For a strong magnet that
+    assumption fails badly -- at G0 = 500 T/m and L = 20 mm the true kick is
+    about 3x this, because the deflected particle drifts into the defocusing
+    field and gets deflected further.  Verify against tracking before trusting
+    the number for anything but a weak lens.
     """
-    if p_ev is None:
-        raise ValueError("p_ev (momentum in eV/c) is required")
     # p [kg m/s] = p_ev * e / c, and q = charge * e, so q/p = charge * c / p_ev.
     c = 2.99792458e8
-    return charge * c / float(p_ev) * np.asarray(field_integral_tm, dtype=float)
+    q_over_p = float(charge) * c / float(p_ev)
+    dxp = -q_over_p * np.asarray(iy_tm, dtype=float)
+    dyp = +q_over_p * np.asarray(ix_tm, dtype=float)
+    return dxp, dyp
 
 
 def offset_sensitivity(lattice, axis="x", span=1e-3, n_points=11, **kwargs):
