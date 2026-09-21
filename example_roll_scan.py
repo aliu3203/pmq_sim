@@ -17,7 +17,7 @@ G1 = 500
 L1 = 0.003
 Z1 = 0.2
 P1 = 'hard'
-THETA1 = 0.1
+THETA1 = 0
 
 L_sep = 0.013523
 
@@ -27,7 +27,7 @@ G2 = -500
 L2 = 0.006
 Z2 = Z1 + L_sep
 P2 = 'hard'
-THETA2 = 0.1
+THETA2 = 0
 
 lat = Lattice([PMQ(G1, L1, Z1, P1, theta=THETA1), PMQ(G2, L2, Z2, P2, theta=THETA2)])
 
@@ -35,8 +35,8 @@ lat = Lattice([PMQ(G1, L1, Z1, P1, theta=THETA1), PMQ(G2, L2, Z2, P2, theta=THET
 # A quadrupole field is identically zero on its own axis, so probing at
 # (0, 0) returns Bx = By = 0 everywhere.  To see a profile at all the wire must
 # be off-axis -- either move the probe (below) or give the magnets dx/dy.
-X_PROBE = 1e-3   # [m] wire position relative to the magnetic centers
-Y_PROBE = 0.0
+X_PROBE = 0   # [m] wire position relative to the magnetic centers
+Y_PROBE = 1e-3
 
 # 'hard' has no ordinary derivatives, so only the leading-order field exists
 # for it.  order=2 would raise.  Switch P1/P2 to 'tanh' to use the full model.
