@@ -5,4 +5,6 @@ __pycache__/
 
 # Generated figures
 offset_scan.png
+roll_field_profile.png
+roll_angle.png
 __pycache__

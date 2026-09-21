@@ -195,13 +195,17 @@ Worth knowing before attributing a measured nonlinearity to magnet alignment.
 
 ## Files
 
+Library modules live in `src/`, runnable demos in `examples/`.
+
 | file | contents |
 |---|---|
-| `profiles.py` | `G(z)` shape functions and their first three derivatives |
-| `field.py` | `PMQ` (offset, roll, order-0 or order-2 field) and `Lattice` (superposition) |
-| `integrals.py` | field integrals, effective length, `offset_scan`, `kick`, `offset_sensitivity` |
-| `checks.py` | eight analytic self-checks — run this first |
-| `example_offset_scan.py` | the ±0.8 mm bench sweep, with figure |
+| `src/profiles.py` | `G(z)` shape functions and their first three derivatives |
+| `src/field.py` | `PMQ` (offset, roll, order-0 or order-2 field) and `Lattice` (superposition) |
+| `src/integrals.py` | field integrals, effective length, `offset_scan`, `kick`, `offset_sensitivity` |
+| `src/checks.py` | eight analytic self-checks — run this first |
+| `examples/example_offset_scan.py` | the ±0.8 mm bench sweep, with figure |
+| `examples/example_roll_scan.py` | field along the wire for a two-magnet lattice at a set roll |
+| `examples/example_roll_angle.py` | roll-angle scan: normal↔skew split, with figure |
 
 ## Running
 
@@ -210,8 +214,8 @@ scipy 1.18.0, matplotlib 3.11.1):
 
 ```bash
 cd pmq_sim
-.venv/bin/python checks.py                 # 8/8 checks pass, with numbers printed
-.venv/bin/python example_offset_scan.py    # writes offset_scan.png
+.venv/bin/python src/checks.py                      # 8/8 checks pass, with numbers printed
+.venv/bin/python examples/example_offset_scan.py    # writes offset_scan.png
 ```
 
 To rebuild it from scratch:
@@ -231,7 +235,7 @@ offset-to-kick relationship is the single number to extract from bench data.
 
 ## Magnet parameters
 
-`G0`, `L`, and the bore radius in `example_offset_scan.py` and `checks.py` are
+`G0`, `L`, and the bore radius in `examples/example_offset_scan.py` and `src/checks.py` are
 **placeholders** marked with `TODO`. Substitute the real numbers for the magnet on
 the bench and everything scales. The physics and all eight checks are
 parameter-independent.

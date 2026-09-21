@@ -22,8 +22,14 @@ Two things follow, and this script shows both:
 Run:  python example_roll_angle.py
 """
 
+import os
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Make the library in src/ importable when run as `python examples/<name>.py`.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from field import PMQ
 from integrals import b_along_wire, field_integral, integrated_gradient
