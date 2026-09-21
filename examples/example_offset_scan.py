@@ -15,8 +15,14 @@ produces two panels:
 Run:  python example_offset_scan.py
 """
 
+import os
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Make the library in src/ importable when run as `python examples/<name>.py`.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from field import PMQ
 from integrals import (
