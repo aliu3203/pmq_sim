@@ -205,7 +205,9 @@ Library modules live in `src/`, runnable demos in `examples/`.
 | `src/checks.py` | eight analytic self-checks — run this first |
 | `examples/example_offset_scan.py` | the ±0.8 mm bench sweep, with figure |
 | `examples/example_roll_scan.py` | field along the wire for a two-magnet lattice at a set roll |
-| `examples/example_roll_angle.py` | roll-angle scan: normal↔skew split, with figure |
+| `examples/example_roll_angle.py` | single-magnet roll scan: normal↔skew split, with figure |
+| `examples/example_roll_differential.py` | fix PMQ 1, scan PMQ 2's roll (mount-error case), with figure |
+| `examples/example_global_frame.py` | cross-calibrate the anchor and PMQ stages into one global frame using the wire, with figure |
 
 ## Running
 
